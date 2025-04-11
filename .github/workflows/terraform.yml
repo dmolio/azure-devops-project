@@ -3,8 +3,22 @@ name: Terraform CI/CD
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'terraform/**'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'terraform/**'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Terraform action to perform'
+        required: true
+        default: 'apply'
+        type: choice
+        options:
+          - apply
+          - destroy
 
 jobs:
   terraform:
@@ -43,7 +57,7 @@ jobs:
         terraform plan -var "azure_client_id=${{ secrets.AZURE_CLIENT_ID }}" -var "azure_client_secret=${{ secrets.AZURE_CLIENT_SECRET }}" -var "azure_subscription_id=${{ secrets.AZURE_SUBSCRIPTION_ID }}" -var "azure_tenant_id=${{ secrets.AZURE_TENANT_ID }}" -out=tfplan
 
     - name: Terraform Apply
-      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && github.inputs.action == 'apply')
       working-directory: ./terraform
       env:
         ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
@@ -52,3 +66,14 @@ jobs:
         ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       run: |
         terraform apply -auto-approve -var "azure_client_id=${{ secrets.AZURE_CLIENT_ID }}" -var "azure_client_secret=${{ secrets.AZURE_CLIENT_SECRET }}" -var "azure_subscription_id=${{ secrets.AZURE_SUBSCRIPTION_ID }}" -var "azure_tenant_id=${{ secrets.AZURE_TENANT_ID }}" tfplan
+
+    - name: Terraform Destroy
+      if: github.event_name == 'workflow_dispatch' && github.inputs.action == 'destroy'
+      working-directory: ./terraform
+      env:
+        ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+        ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      run: |
+        terraform destroy -auto-approve -var "azure_client_id=${{ secrets.AZURE_CLIENT_ID }}" -var "azure_client_secret=${{ secrets.AZURE_CLIENT_SECRET }}" -var "azure_subscription_id=${{ secrets.AZURE_SUBSCRIPTION_ID }}" -var "azure_tenant_id=${{ secrets.AZURE_TENANT_ID }}"
