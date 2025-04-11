@@ -7,9 +7,13 @@ terraform {
   }
 }
 
+# Configure the Azure provider
+# Moved to backend.tf
+/*
 provider "azurerm" {
   features {}
 }
+*/
 
 resource "azurerm_resource_group" "rg" {
   name     = "azure-devops-rg"
