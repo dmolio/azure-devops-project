@@ -26,7 +26,7 @@ jobs:
         ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       run: |
-        terraform init
+        terraform init -backend-config="resource_group_name=azure-devops-rg" -backend-config="storage_account_name=tfstateazuredevops123" -backend-config="container_name=tfstate" -backend-config="key=terraform.tfstate"
 
     - name: Terraform Format
       working-directory: ./terraform
@@ -40,7 +40,7 @@ jobs:
         ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       run: |
-        terraform plan -out=tfplan
+        terraform plan -var "azure_client_id=${{ secrets.AZURE_CLIENT_ID }}" -var "azure_client_secret=${{ secrets.AZURE_CLIENT_SECRET }}" -var "azure_subscription_id=${{ secrets.AZURE_SUBSCRIPTION_ID }}" -var "azure_tenant_id=${{ secrets.AZURE_TENANT_ID }}" -out=tfplan
 
     - name: Terraform Apply
       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -51,4 +51,4 @@ jobs:
         ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       run: |
-        terraform apply -auto-approve tfplan
+        terraform apply -auto-approve -var "azure_client_id=${{ secrets.AZURE_CLIENT_ID }}" -var "azure_client_secret=${{ secrets.AZURE_CLIENT_SECRET }}" -var "azure_subscription_id=${{ secrets.AZURE_SUBSCRIPTION_ID }}" -var "azure_tenant_id=${{ secrets.AZURE_TENANT_ID }}" tfplan
