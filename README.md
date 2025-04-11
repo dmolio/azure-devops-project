@@ -1,26 +1,45 @@
-# Azure DevOps Project
+# Azure DevOps Project with CI/CD Pipeline
 
-This project demonstrates a comprehensive Azure-based solution for CI/CD, containerization, security, and monitoring based on a job description for a digital architecture role.
+This project sets up an Azure-based infrastructure using Terraform and deploys a sample application with continuous integration and continuous deployment (CI/CD) through GitHub Actions. The focus is on containerization, security, and monitoring, with integration capabilities for COTS applications and vendor systems like IBM. The project targets multiple environments: Dev, Staging, and Prod.
 
-## Components
+## Overview of GitHub Actions Workflows
 
-- **CI/CD Pipeline**: Using GitHub Actions for continuous integration and delivery.
-- **Infrastructure as Code**: Using Terraform or ARM templates.
-- **Containerization**: Docker and Azure Kubernetes Service (AKS).
-- **Security**: Microsoft Defender for Cloud and Azure Sentinel.
-- **Monitoring**: Azure Monitor for alerting and incident management.
-- **Integration**: Simulated integration with COTS and vendor systems.
+GitHub Actions is used to automate the build, test, and deployment processes whenever new code is pushed to the repository. Here's how the workflows function:
 
-## Environments
+### 1. Terraform Workflow (`terraform.yml`)
+- **Trigger**: This workflow is triggered on every push to the `main` branch or on pull requests to `main`.
+- **Purpose**: It manages the Azure infrastructure using Terraform.
+- **Steps**:
+  - **Checkout Code**: Retrieves the latest code from the repository.
+  - **Setup Terraform**: Installs and configures Terraform.
+  - **Terraform Init**: Initializes Terraform with the Azure backend for state management, using credentials from GitHub Secrets for authentication.
+  - **Terraform Format**: Checks the formatting of Terraform files to ensure consistency.
+  - **Terraform Plan**: Creates an execution plan for infrastructure changes.
+  - **Terraform Apply**: Applies the changes to create or update Azure resources (only on push to `main`).
+- **Outcome**: Ensures that the Azure infrastructure (like AKS, ACR, etc.) is up-to-date with the code in the repository.
 
-- **Dev**: Development environment for testing new features.
-- **Staging**: Pre-production environment for final testing.
-- **Prod**: Production environment for live deployment.
+### 2. Application Workflow (`app.yml`)
+- **Trigger**: This workflow runs on push to the `main` branch or on pull requests to `main`, after the Terraform workflow completes successfully.
+- **Purpose**: Builds, tests, and deploys the application to Azure Kubernetes Service (AKS).
+- **Steps**:
+  - **Checkout Code**: Retrieves the latest code from the repository.
+  - **Login to Azure Container Registry (ACR)**: Uses credentials from GitHub Secrets to authenticate with ACR.
+  - **Build and Push Docker Image**: Builds a Docker image of the application, tests it, and pushes it to ACR.
+  - **Deploy to AKS**: (Future step) Deploys the image to AKS cluster for testing and production environments.
+- **Outcome**: Automates the process of building a new version of the application, testing it, and deploying it to the AKS cluster, ensuring that the latest code is always running in the environment.
 
-## Next Steps
+## How It Works Together
+When you push new code to the `main` branch:
+1. The Terraform workflow runs first to ensure the Azure infrastructure is correctly configured.
+2. If successful, the Application workflow triggers to build and deploy the application.
+3. This setup allows for continuous integration (building and testing the code) and continuous deployment (deploying to AKS), ensuring that your environments (Dev, Staging, Prod) are always up-to-date with the latest code and infrastructure changes.
 
-1. Set up GitHub Actions workflows and pipelines.
-2. Define infrastructure with Terraform or ARM templates.
-3. Create Docker containers and deploy to AKS.
-4. Configure security and monitoring tools.
-5. Document integration points with external systems.
+## Security and Monitoring
+- Azure services like Defender for Cloud, Sentinel, and Monitor are integrated to provide security and performance insights across environments.
+- Sensitive credentials are stored in GitHub Secrets to prevent exposure in version control.
+
+## Getting Started
+- Ensure you have the necessary Azure credentials set up in GitHub Secrets as described in the workflow files.
+- Clone this repository, make changes, and push to see the CI/CD pipeline in action.
+
+For more details on specific configurations or to customize the environments, refer to the Terraform files in the `terraform` directory and the workflow files in `.github/workflows`.
